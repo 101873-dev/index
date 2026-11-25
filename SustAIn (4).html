@@ -1,0 +1,652 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SustAIn</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;500;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/htm@3.1.1/dist/htm.js"></script>
+<style>
+:root{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:#eef3f1;font-family:'Bricolage Grotesque',system-ui,sans-serif;color:#1e293b;color-scheme:light;padding-top:env(safe-area-inset-top,0px)}
+@keyframes pulse2{0%,100%{box-shadow:0 0 0 0 var(--g)}50%{box-shadow:0 0 26px 8px var(--g)}}
+.glow{animation:pulse2 2.4s ease-in-out infinite}
+@keyframes bar{from{width:0}to{width:100%}}
+@media (prefers-reduced-motion:reduce){.glow{animation:none}}
+button:focus-visible{outline:2px solid #059669;outline-offset:2px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const { useState, useEffect, useMemo } = React;
+const html = htm.bind(React.createElement);
+
+const INIT = [
+  {id:1,n:'Aguacate',e:'🥑',d:1,q:'3 pzas',kg:.4,p:38,w:140},
+  {id:2,n:'Espinaca',e:'🥬',d:1,q:'1 manojo',kg:.25,p:22,w:30},
+  {id:3,n:'Jitomate',e:'🍅',d:2,q:'6 pzas',kg:.8,p:28,w:90},
+  {id:4,n:'Plátano',e:'🍌',d:2,q:'5 pzas',kg:.6,p:20,w:110},
+  {id:5,n:'Pechuga de pollo',e:'🍗',d:2,q:'700 g',kg:.7,p:96,w:750},
+  {id:6,n:'Cilantro',e:'🌿',d:3,q:'1 manojo',kg:.1,p:8,w:10},
+  {id:7,n:'Tortillas',e:'🫓',d:4,q:'500 g',kg:.5,p:24,w:40},
+  {id:8,n:'Leche',e:'🥛',d:5,q:'1 L',kg:1,p:29,w:250},
+  {id:9,n:'Queso panela',e:'🧀',d:6,q:'400 g',kg:.4,p:62,w:500},
+  {id:10,n:'Cebolla',e:'🧅',d:9,q:'4 pzas',kg:.5,p:15,w:20},
+  {id:11,n:'Limón',e:'🍋',d:8,q:'8 pzas',kg:.3,p:18,w:30},
+  {id:12,n:'Huevo',e:'🥚',d:12,q:'12 pzas',kg:.6,p:55,w:200},
+];
+const LISTA_INIT = [
+  {id:100,n:'Manzanas',q:'1 kg'},
+  {id:101,n:'Arroz',q:'1 kg'},
+  {id:102,n:'Papel higiénico',q:'4 rollos'},
+  {id:103,n:'Yogur natural',q:'900 g'},
+];
+const EMOJI_GUESS = {aguacate:'🥑',espinaca:'🥬',jitomate:'🍅',tomate:'🍅',platano:'🍌',plátano:'🍌',pollo:'🍗',cilantro:'🌿',tortilla:'🫓',leche:'🥛',queso:'🧀',cebolla:'🧅',limon:'🍋',limón:'🍋',huevo:'🥚',fresa:'🍓',yogur:'🥣',calabacita:'🥒',pepino:'🥒',pan:'🍞',arroz:'🍚',frijol:'🫘',papa:'🥔',manzana:'🍎',naranja:'🍊',carne:'🥩',uva:'🍇',zanahoria:'🥕'};
+const guessEmoji = n=>{const k=n.toLowerCase(); for(const key in EMOJI_GUESS) if(k.includes(key)) return EMOJI_GUESS[key]; return '🛒';};
+const guessDays = n=>{const k=n.toLowerCase();
+  if(/verdura|lechuga|espinaca|cilantro|perejil|jitomate|calabacita|brocoli/.test(k)) return 4;
+  if(/fruta|fresa|platano|plátano|manzana|naranja|uva|papaya|melon/.test(k)) return 5;
+  if(/carne|pollo|pescado|res|jamon|tocino/.test(k)) return 2;
+  if(/leche|yogur|queso|crema|lacteo/.test(k)) return 6;
+  return 10;};
+const RECETAS = [
+  {id:'r1',t:'Guacamole con totopos',min:10,ing:['Aguacate','Jitomate','Cebolla','Limón','Cilantro'],paso:'Machaca el aguacate, pica el resto y mezcla con limón. Dora las tortillas para los totopos.'},
+  {id:'r2',t:'Tinga de pollo en tostadas',min:35,ing:['Pechuga de pollo','Jitomate','Cebolla','Tortillas'],paso:'Cuece y deshebra el pollo; guísalo con jitomate y cebolla. Sirve sobre tortillas doradas.'},
+  {id:'r3',t:'Quesadillas de espinaca',min:15,ing:['Espinaca','Tortillas','Queso panela'],paso:'Saltea la espinaca con cebolla, rellena las tortillas con queso y dora por ambos lados.'},
+  {id:'r4',t:'Licuado de plátano',min:5,ing:['Plátano','Leche'],paso:'Licúa el plátano maduro con leche fría y una pizca de canela.'},
+  {id:'r5',t:'Huevos a la mexicana',min:12,ing:['Huevo','Jitomate','Cebolla','Cilantro'],paso:'Sofríe cebolla y jitomate, agrega el huevo y revuelve. Termina con cilantro.'},
+  {id:'r6',t:'Crema de espinaca y aguacate',min:20,ing:['Espinaca','Aguacate','Cebolla','Leche'],paso:'Cuece espinaca con cebolla, licúa con aguacate y leche, y sirve tibia.'},
+];
+
+const BENEF = {
+  'Aguacate':'Grasas monoinsaturadas, fibra y potasio; ayuda a sentirte satisfecho por más tiempo.',
+  'Espinaca':'Aporta hierro, folato y vitamina K; combina con limón para aprovechar mejor el hierro.',
+  'Jitomate':'Fuente de licopeno y vitamina C, antioxidantes que se aprovechan mejor cocidos.',
+  'Plátano':'Potasio y carbohidratos de rápida energía; ideal antes o después de ejercitarte.',
+  'Pechuga de pollo':'Proteína magra de alta calidad para mantener y reparar músculo.',
+  'Cilantro':'Aporta vitamina K y antioxidantes con muy pocas calorías; realza el sabor sin sal.',
+  'Tortillas':'El maíz aporta fibra y energía; elige las de maíz nixtamalizado, que también dan calcio.',
+  'Leche':'Calcio, proteína y vitamina D para huesos y músculos.',
+  'Queso panela':'Proteína y calcio con menos grasa que otros quesos.',
+  'Cebolla':'Contiene quercetina y prebióticos que alimentan a tu flora intestinal.',
+  'Limón':'Vitamina C; ayuda a absorber el hierro de las verduras de hoja verde.',
+  'Huevo':'Proteína completa, colina y vitamina B12; muy versátil y saciante.',
+};
+const OBJ = [
+  {id:'energia',l:'Energía diaria',e:'⚡'},
+  {id:'ligero',l:'Ligero y fresco',e:'🥒'},
+  {id:'musculo',l:'Más proteína',e:'💪'},
+];
+const RUTINA = {
+  energia:[
+    {h:'7:30',t:'Desayuno',d:'Huevos a la mexicana con tortillas y una fruta.'},
+    {h:'10:30',t:'Colación',d:'Un plátano con un puño de nueces o cacahuates.'},
+    {h:'14:00',t:'Comida',d:'Pollo a la plancha, arroz y ensalada de jitomate con aguacate.'},
+    {h:'17:30',t:'Licuado',d:'Verde energético (espinaca, plátano y leche).'},
+    {h:'20:30',t:'Cena',d:'Quesadillas de espinaca con queso panela.'},
+  ],
+  ligero:[
+    {h:'7:30',t:'Desayuno',d:'Yogur natural con fruta picada y avena.'},
+    {h:'10:30',t:'Colación',d:'Pepino y jícama con limón.'},
+    {h:'14:00',t:'Comida',d:'Caldo de verduras con pollo deshebrado y tortillas.'},
+    {h:'17:30',t:'Licuado',d:'Cremoso de aguacate, ligero con leche fría.'},
+    {h:'20:30',t:'Cena',d:'Ensalada de espinaca, jitomate, huevo cocido y limón.'},
+  ],
+  musculo:[
+    {h:'7:30',t:'Desayuno',d:'3 huevos revueltos con frijoles y tortillas.'},
+    {h:'10:30',t:'Colación',d:'Queso panela con jitomate y cilantro.'},
+    {h:'14:00',t:'Comida',d:'Pechuga de pollo, arroz y verduras salteadas.'},
+    {h:'17:30',t:'Licuado',d:'Proteico de plátano con leche y avena.'},
+    {h:'20:30',t:'Cena',d:'Tinga de pollo en tostadas con ensalada.'},
+  ],
+};
+const LICUADOS = [
+  {id:'l1',t:'Verde energético',e:'🥬',ing:['Espinaca','Plátano','Leche','Limón'],ben:'Hierro, potasio y vitamina C para arrancar la tarde con energía.',paso:'Licúa todo con hielo hasta que quede terso.'},
+  {id:'l2',t:'Cremoso de aguacate',e:'🥑',ing:['Aguacate','Plátano','Leche'],ben:'Grasas saludables y fibra: te mantiene satisfecho y cuida tu corazón.',paso:'Licúa con leche fría; endulza con el plátano maduro.'},
+  {id:'l3',t:'Proteico de plátano',e:'🍌',ing:['Plátano','Leche','Avena'],ben:'Carbohidratos y proteína, útiles después de hacer ejercicio.',paso:'Licúa el plátano con leche, avena y una pizca de canela.'},
+  {id:'l4',t:'Cítrico con espinaca',e:'🍋',ing:['Espinaca','Limón','Plátano'],ben:'Vitamina C que ayuda a absorber el hierro de la espinaca.',paso:'Licúa con agua fría y hielo; sirve de inmediato.'},
+];
+const SUGERIDOS = ['Pan','Frijoles','Papa','Zanahoria','Fresa','Naranja','Pepino','Calabacita','Carne molida','Crema','Yogur natural','Arroz'];
+const parseQ = q=>{const m=(q||'').match(/^(\d+(?:\.\d+)?)\s*(.*)$/); return m?{n:parseFloat(m[1]),u:m[2]}:null;};
+const SCAN_DEMO = {
+  ticket:[['Pan de caja','1 pza'],['Yogur natural','900 g'],['Papa','1 kg'],['Pepino','4 pzas'],['Arroz','1 kg']],
+  foto:[['Fresa','500 g'],['Naranja','2 kg'],['Calabacita','6 pzas'],['Zanahoria','1 kg'],['Pepino','5 pzas']],
+};
+const st = d => d<=1?'r':d<=3?'a':'v';
+const S = {
+  v:{l:'Óptimo',dot:'bg-emerald-500',chip:'bg-emerald-50 text-emerald-800',hex:'#10b981'},
+  a:{l:'Consumir pronto',dot:'bg-amber-400',chip:'bg-amber-50 text-amber-800',hex:'#f59e0b'},
+  r:{l:'Riesgo inminente',dot:'bg-red-500',chip:'bg-red-50 text-red-700',hex:'#dc2626'},
+};
+const mxn = n => '$' + n.toLocaleString('es-MX',{maximumFractionDigits:0});
+const dias = d => d<=0?'Hoy':d===1?'1 día':d+' días';
+
+const PLANES = [
+  {id:'gratis',n:'Básico',p:0,per:'siempre',d:'Para probar SustAIn sin compromiso.'},
+  {id:'premium',n:'Premium',p:59,per:'mes',d:'La experiencia completa con tu SustAIn Pod.',destacado:true},
+];
+const FEATURES = [
+  {n:'Alimentos en inventario',v:['Hasta 15','Ilimitado']},
+  {n:'Semáforo de estado',v:[true,true]},
+  {n:'Lecturas en vivo del SustAIn Pod',v:[false,true]},
+  {n:'Recetas con IA',v:['1 por semana','Ilimitadas']},
+  {n:'Escaneo de tickets y fotos de tianguis',v:[false,true]},
+  {n:'Alertas push de riesgo de descarte',v:[false,true]},
+  {n:'Tablero de impacto mensual',v:[true,true]},
+  {n:'Cuentas vinculadas del hogar',v:['1','1']},
+  {n:'Soporte',v:['Estándar','Prioritario']},
+];
+
+const IDIOMAS = [{code:'es',label:'Español',flag:'🇲🇽'},{code:'en',label:'English',flag:'🇺🇸'}];
+const GUSTOS = [
+  {id:'vegetariano',es:'Vegetariano',en:'Vegetarian',ic:'🥗'},
+  {id:'vegano',es:'Vegano',en:'Vegan',ic:'🌱'},
+  {id:'sin_gluten',es:'Sin gluten',en:'Gluten-free',ic:'🌾'},
+  {id:'picante',es:'Picante',en:'Spicy',ic:'🌶️'},
+  {id:'mariscos',es:'Mariscos',en:'Seafood',ic:'🦐'},
+  {id:'carnes',es:'Carnes rojas',en:'Red meat',ic:'🥩'},
+  {id:'lacteos',es:'Lácteos',en:'Dairy',ic:'🧀'},
+  {id:'saludable',es:'Saludable',en:'Healthy',ic:'💪'},
+];
+const T = {
+  es:{tag:'Convierte tu refri en tu aliado contra el desperdicio.',start:'Comenzar',f1:'Monitoreo en vivo con tu SustAIn Pod',f2:'Recetas con IA para lo que esté por vencer',f3:'Ahorro real en pesos, kilos y litros de agua',idiomaT:'¿En qué idioma prefieres usar SustAIn?',idiomaS:'Podrás cambiarlo después.',cont:'Continuar',gustosT:'Cuéntanos tus gustos',gustosS:'Así te sugerimos mejores recetas para tu refri.',fin:'Entrar a SustAIn',omitir:'Omitir por ahora',atras:'Atrás'},
+  en:{tag:"Turn your fridge into your best ally against food waste.",start:'Get started',f1:'Live monitoring with your SustAIn Pod',f2:"AI recipes for what's about to expire",f3:'Real savings in money, kilos and water',idiomaT:'Which language do you prefer for SustAIn?',idiomaS:'You can change it later.',cont:'Continue',gustosT:'Tell us your food preferences',gustosS:"We'll suggest better recipes for your fridge.",fin:'Enter SustAIn',omitir:'Skip for now',atras:'Back'},
+};
+
+function App(){
+  const [tab,setTab]=useState('nevera');
+  const [inv,setInv]=useState(INIT);
+  const [imp,setImp]=useState({mxn:486,kg:9.8,agua:3150,hist:[]});
+  const [busy,setBusy]=useState(null);
+  const [toast,setToast]=useState(null);
+  const [tick,setTick]=useState(0);
+  const [thinking,setThinking]=useState(false);
+  const [plan,setPlan]=useState('gratis');
+  const [lista,setLista]=useState(LISTA_INIT);
+  const [nuevoN,setNuevoN]=useState('');
+  const [nuevoQ,setNuevoQ]=useState('');
+  const [compartiendo,setCompartiendo]=useState(false);
+  const [obj,setObj]=useState('energia');
+  const [scanMode,setScanMode]=useState('ticket');
+  const [scanImg,setScanImg]=useState(null);
+  const [scanSt,setScanSt]=useState('idle');
+  const [scanItems,setScanItems]=useState([]);
+  const [flow,setFlow]=useState('landing');
+  const [idioma,setIdioma]=useState('es');
+  const [gustos,setGustos]=useState([]);
+  const t = T[idioma];
+  const toggleGusto = id=>setGustos(cur=>cur.includes(id)?cur.filter(x=>x!==id):[...cur,id]);
+
+  useEffect(()=>{const i=setInterval(()=>setTick(t=>t+1),2500);return()=>clearInterval(i)},[]);
+  useEffect(()=>{if(toast){const t=setTimeout(()=>setToast(null),3200);return()=>clearTimeout(t)}},[toast]);
+  useEffect(()=>{if(tab==='recetas'){setThinking(true);const t=setTimeout(()=>setThinking(false),1100);return()=>clearTimeout(t)}},[tab]);
+
+  const groups = useMemo(()=>({r:inv.filter(i=>st(i.d)==='r'),a:inv.filter(i=>st(i.d)==='a'),v:inv.filter(i=>st(i.d)==='v')}),[inv]);
+  const worst = groups.r.length?'r':groups.a.length?'a':'v';
+  const urgent = [...groups.r,...groups.a];
+  const urgentNames = urgent.map(i=>i.n);
+  const temp = +(3.6 + Math.sin(tick*1.3)*0.3).toFixed(1);
+
+  const recetas = useMemo(()=>{
+    const names = inv.map(i=>i.n);
+    return RECETAS.filter(r=>r.ing.every(x=>names.includes(x)))
+      .map(r=>({...r,use:r.ing.filter(x=>urgentNames.includes(x))}))
+      .filter(r=>r.use.length>0)
+      .sort((a,b)=>b.use.length-a.use.length).slice(0,3);
+  },[inv]);
+
+  const agregarALista = ()=>{
+    if(!nuevoN.trim()) return;
+    setLista(cur=>[...cur,{id:Date.now(),n:nuevoN.trim(),q:nuevoQ.trim()||'1 pza'}]);
+    setNuevoN(''); setNuevoQ('');
+  };
+  const agregarRapido = n=>{
+    setLista(cur=>[...cur,{id:Date.now()+Math.random(),n,q:'1 pza'}]);
+    setToast(`${n} agregado a tu lista`);
+  };
+  const marcar = item=>setLista(cur=>cur.map(i=>i.id===item.id?{...i,ok:!i.ok}:i));
+  const cambiarCant = (item,delta)=>setLista(cur=>cur.map(i=>{
+    if(i.id!==item.id) return i;
+    const p=parseQ(i.q); if(!p) return i;
+    const n=Math.max(1,+(p.n+delta).toFixed(2));
+    return {...i,q:(p.u?n+' '+p.u:String(n))};
+  }));
+  const limpiarMarcados = ()=>setLista(cur=>cur.filter(i=>!i.ok));
+  const comprarMarcados = ()=>{
+    const ms = lista.filter(i=>i.ok); if(!ms.length) return;
+    setInv(cur=>[...cur,...ms.map((i,k)=>({id:Date.now()+k,n:i.n,e:guessEmoji(i.n),d:guessDays(i.n),q:i.q,kg:.3,p:25,w:60}))]);
+    setLista(cur=>cur.filter(i=>!i.ok));
+    setToast(`${ms.length} ${ms.length===1?'producto pasó':'productos pasaron'} a tu refri`);
+  };
+  const quitarDeLista = item=>{
+    setLista(cur=>cur.filter(i=>i.id!==item.id));
+  };
+  const yaLoCompre = item=>{
+    setLista(cur=>cur.filter(i=>i.id!==item.id));
+    const d = guessDays(item.n);
+    setInv(cur=>[...cur,{id:Date.now(),n:item.n,e:guessEmoji(item.n),d,q:item.q,kg:.3,p:25,w:60}]);
+    setToast(`${item.n} agregado a tu refri · caducidad estimada: ${dias(d)}`);
+  };
+  const compartirTexto = ()=>'🛒 Lista de compras SustAIn\n'+lista.map(i=>`• ${i.n} — ${i.q}`).join('\n');
+  const copiarLista = ()=>{
+    try{ navigator.clipboard.writeText(compartirTexto()); setToast('Lista copiada, ¡pégala en WhatsApp o donde quieras!'); }
+    catch(e){ setToast('No se pudo copiar automáticamente, selecciona el texto para copiarlo.'); }
+  };
+
+  const rescue = (items)=>{
+    const s = items.filter(i=>urgentNames.includes(i.n));
+    return {m:s.reduce((a,i)=>a+i.p,0),k:s.reduce((a,i)=>a+i.kg,0),w:s.reduce((a,i)=>a+i.w,0)};
+  };
+  const cook = r=>{
+    const used = inv.filter(i=>r.ing.includes(i.n));
+    const {m,k,w} = rescue(used);
+    setInv(cur=>cur.filter(i=>!r.ing.includes(i.n)));
+    setImp(c=>({mxn:c.mxn+m,kg:+(c.kg+k).toFixed(2),agua:c.agua+w,hist:[{t:r.t,m},...c.hist]}));
+    setToast(`¡Buen provecho! Descontamos ${used.length} ingredientes · +${mxn(m)} rescatados`);
+  };
+  const consumed = i=>{
+    const {m,k,w} = rescue([i]);
+    setInv(cur=>cur.filter(x=>x.id!==i.id));
+    if(m) setImp(c=>({...c,mxn:c.mxn+m,kg:+(c.kg+k).toFixed(2),agua:c.agua+w}));
+    setToast(m?`${i.n} consumido a tiempo · +${mxn(m)}`:`${i.n} retirado del inventario`);
+  };
+
+  const Sensor = ({label,val,unit,pct,tone,note}) => html`
+    <div className="bg-white rounded-2xl p-4 border border-slate-200">
+      <div className="flex justify-between text-xs text-slate-500"><span>${label}</span><span className=${tone==='r'?'text-red-600 font-semibold':tone==='a'?'text-amber-600 font-semibold':'text-emerald-700 font-semibold'}>${note}</span></div>
+      <div className="text-3xl font-extrabold mt-1">${val} <span className="text-sm font-medium text-slate-400">${unit}</span></div>
+      <div className="h-1.5 rounded bg-slate-100 mt-3"><div className=${'h-1.5 rounded '+S[tone==='r'?'r':tone==='a'?'a':'v'].dot} style=${{width:Math.min(100,pct)+'%',transition:'width .8s'}}></div></div>
+    </div>`;
+
+  const Col = ({k,label}) => html`
+    <div className="bg-white rounded-2xl border border-slate-200 p-4">
+      <div className="flex items-center gap-2 mb-2">
+        <span className=${'w-2.5 h-2.5 rounded-full '+S[k].dot}></span>
+        <h3 className="font-bold">${label}</h3>
+        <span className="ml-auto text-xs text-slate-400">${groups[k].length}</span>
+      </div>
+      ${groups[k].length===0?html`<p className="text-sm text-slate-400 py-6 text-center">Sin productos en este estado.</p>`
+      :html`<div className="divide-y divide-slate-100">${groups[k].map(i=>html`
+        <div key=${i.id} className="flex items-center gap-3 py-2.5">
+          <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-xl">${i.e}</div>
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold text-[15px] truncate">${i.n}</div>
+            <div className="text-xs text-slate-500">${i.q} · ${dias(i.d)}</div>
+          </div>
+          <button onClick=${()=>consumed(i)} title="Marcar como consumido" className="text-xs font-semibold px-3 py-1.5 rounded-full border border-slate-200 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-800 transition">Consumido</button>
+        </div>`)}</div>`}
+    </div>`;
+
+  const Nevera = () => html`<div className="space-y-4">
+    <div className="rounded-3xl bg-slate-900 text-white p-6 flex items-center justify-between gap-6">
+      <div>
+        <div className="text-slate-400 text-sm mb-1">Estado del refrigerador</div>
+        <div className="text-3xl sm:text-4xl font-extrabold leading-tight">${worst==='v'?'Todo en orden':worst==='a'?'Cocina esto pronto':'Riesgo inminente de descarte'}</div>
+        <div className="text-slate-300 mt-2">${groups.r.length} en rojo · ${groups.a.length} en amarillo · ${groups.v.length} óptimos</div>
+      </div>
+      <div className="flex sm:flex-col gap-2 bg-slate-800 rounded-full p-2 shrink-0">
+        ${['r','a','v'].map(k=>html`<span key=${k} style=${{'--g':S[k].hex+'aa',background:worst===k?S[k].hex:'#334155'}} className=${'w-7 h-7 rounded-full '+(worst===k?'glow':'')}></span>`)}
+      </div>
+    </div>
+    <div>
+      <div className="flex items-center gap-2 mb-2 text-sm"><span className="w-2 h-2 rounded-full bg-emerald-500"></span><b>SustAIn Pod conectado</b><span className="text-slate-400">· lectura en vivo</span></div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <${Sensor} label="Temperatura" val=${temp} unit="°C" pct=${temp/10*100} tone=${temp>5?'r':temp>4.3?'a':'v'} note=${temp>5?'Muy cálida':temp>4.3?'Vigilar':'Ideal'}/>
+      </div>
+    </div>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-start">
+      <${Col} k="r" label="Riesgo inminente"/>
+      <${Col} k="a" label="Consumir pronto"/>
+      <${Col} k="v" label="Óptimo"/>
+    </div>
+  </div>`;
+
+  const Lista = () => html`<div>
+    <div className="flex items-center justify-between gap-3 mb-5">
+      <p className="text-slate-500 max-w-xl">Agrega lo que te falta, márcalo como comprado y pasa directo a tu refri.</p>
+      <button onClick=${()=>setCompartiendo(true)} disabled=${lista.length===0} className="shrink-0 flex items-center gap-2 text-sm font-bold px-4 py-2.5 rounded-xl bg-slate-800 text-white hover:bg-slate-700 transition disabled:opacity-40">
+        <span>🔗</span> Compartir
+      </button>
+    </div>
+
+    <form onSubmit=${e=>{e.preventDefault();agregarALista();}} className="flex flex-col sm:flex-row gap-2 mb-6 bg-white rounded-2xl border border-slate-200 p-3">
+      <input value=${nuevoN} onChange=${e=>setNuevoN(e.target.value)} placeholder="¿Qué necesitas comprar?" className="flex-1 px-3 py-2.5 rounded-xl border border-slate-200 focus:border-emerald-500 outline-none text-sm"/>
+      <input value=${nuevoQ} onChange=${e=>setNuevoQ(e.target.value)} placeholder="Cantidad (opcional)" className="sm:w-40 px-3 py-2.5 rounded-xl border border-slate-200 focus:border-emerald-500 outline-none text-sm"/>
+      <button type="submit" className="px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-sm transition">Agregar</button>
+    </form>
+
+    ${(()=>{
+      const tengo=[...inv.map(i=>i.n),...lista.map(i=>i.n)].map(x=>x.toLowerCase());
+      const sug=SUGERIDOS.filter(x=>!tengo.includes(x.toLowerCase())).slice(0,8);
+      return sug.length===0?null:html`<div className="mb-6">
+        <div className="text-sm text-slate-500 mb-2">Toca para agregar rápido lo que quizá te falta:</div>
+        <div className="flex flex-wrap gap-2">${sug.map(x=>html`<button key=${x} onClick=${()=>agregarRapido(x)} className="text-sm font-semibold px-3 py-1.5 rounded-full bg-white border border-slate-200 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-800 transition active:scale-95">+ ${guessEmoji(x)} ${x}</button>`)}</div>
+      </div>`;})()}
+
+    ${lista.length>0&&html`<div className="mb-3">
+      <div className="flex items-center justify-between text-sm mb-1.5">
+        <span className="text-slate-500"><b className="text-slate-800">${lista.filter(i=>i.ok).length}</b> de ${lista.length} marcados</span>
+        <span className="flex gap-2">
+          ${lista.some(i=>i.ok)&&html`<button onClick=${limpiarMarcados} className="text-xs px-3 py-1.5 rounded-full text-slate-500 hover:bg-slate-100 transition">Quitar marcados</button>`}
+          ${lista.some(i=>i.ok)&&html`<button onClick=${comprarMarcados} className="text-xs font-bold px-3 py-1.5 rounded-full bg-emerald-700 text-white hover:bg-emerald-800 transition">Pasar marcados a mi refri</button>`}
+        </span>
+      </div>
+      <div className="h-1.5 rounded bg-slate-100"><div className="h-1.5 rounded bg-emerald-500" style=${{width:(lista.filter(i=>i.ok).length/lista.length*100)+'%',transition:'width .4s'}}></div></div>
+    </div>`}
+
+    ${lista.length===0?html`<div className="rounded-2xl bg-emerald-50 p-10 text-center"><div className="text-4xl mb-2">✅</div><div className="font-bold">Tu lista está vacía</div><div className="text-sm text-slate-500 mt-1">Agrega algo arriba para empezar.</div></div>`
+    :html`<div className="rounded-2xl border border-slate-200 bg-white divide-y divide-slate-100">
+      ${lista.map(i=>html`<div key=${i.id} className=${'flex items-center gap-3 p-4 transition '+(i.ok?'bg-slate-50':'')}>
+        <button onClick=${()=>marcar(i)} aria-label=${i.ok?'Desmarcar':'Marcar'} aria-pressed=${!!i.ok} className=${'w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs shrink-0 transition active:scale-90 '+(i.ok?'bg-emerald-600 border-emerald-600 text-white':'border-slate-300 hover:border-emerald-500')}>${i.ok?'✓':''}</button>
+        <span className=${'text-xl '+(i.ok?'opacity-40':'')}>${guessEmoji(i.n)}</span>
+        <div className="flex-1 min-w-0">
+          <div className=${'font-semibold text-[15px] truncate '+(i.ok?'line-through text-slate-400':'')}>${i.n}</div>
+          <div className="text-xs text-slate-500">${i.q}</div>
+        </div>
+        ${parseQ(i.q)&&html`<div className="flex items-center rounded-full border border-slate-200 bg-white">
+          <button onClick=${()=>cambiarCant(i,-1)} aria-label="Menos" className="w-7 h-7 text-slate-500 hover:text-emerald-700 font-bold">−</button>
+          <button onClick=${()=>cambiarCant(i,1)} aria-label="Más" className="w-7 h-7 text-slate-500 hover:text-emerald-700 font-bold">+</button>
+        </div>`}
+        <button onClick=${()=>quitarDeLista(i)} title="Quitar de la lista" className="text-xs px-2.5 py-1.5 rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition">Quitar</button>
+        <button onClick=${()=>yaLoCompre(i)} className="text-xs font-bold px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-800 hover:bg-emerald-100 transition whitespace-nowrap">Ya lo compré</button>
+      </div>`)}
+    </div>`}
+    <p className="text-xs text-slate-400 mt-4">Al marcar "Ya lo compré" se quita de esta lista y se agrega automáticamente a tu refri.</p>
+  </div>`;
+
+  const Recetas = () => html`<div>
+    <div className="flex flex-wrap items-center gap-1.5 mb-5">
+      <span className="text-sm text-slate-500 mr-1">Ingredientes críticos:</span>
+      ${urgent.length===0?html`<span className="text-sm text-slate-400">ninguno por ahora</span>`:urgent.map(i=>html`<span key=${i.id} className=${'text-xs font-semibold px-2.5 py-1 rounded-full '+S[st(i.d)].chip}>${i.e} ${i.n}</span>`)}
+    </div>
+    ${thinking?html`<div className="rounded-2xl bg-white border border-slate-200 p-10 text-center max-w-md">
+        <div className="font-semibold mb-3">Generando recetas con IA…</div>
+        <div className="h-1.5 rounded bg-slate-100 overflow-hidden"><div className="h-full bg-emerald-600" style=${{animation:'bar 1.1s ease-out forwards'}}></div></div>
+      </div>`
+    : recetas.length===0?html`<div className="rounded-2xl bg-emerald-50 p-10 text-center max-w-md"><div className="text-4xl mb-2">🎉</div><div className="font-bold">Nada por rescatar</div><div className="text-sm text-slate-500 mt-1">Agrega compras nuevas para recibir recetas.</div></div>`
+    : html`<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">${recetas.map(r=>html`<div key=${r.id} className="rounded-3xl border border-slate-200 bg-white p-5 flex flex-col">
+        <div className="flex items-start justify-between gap-3">
+          <h3 className="font-extrabold text-lg leading-tight">${r.t}</h3>
+          <span className="text-xs text-slate-500 whitespace-nowrap mt-1">${r.min} min</span>
+        </div>
+        <div className="flex flex-wrap gap-1.5 my-3">
+          ${r.ing.map(x=>html`<span key=${x} className=${'text-xs px-2 py-0.5 rounded-full '+(r.use.includes(x)?'bg-amber-100 text-amber-900 font-semibold':'bg-slate-100 text-slate-600')}>${x}</span>`)}
+        </div>
+        <p className="text-sm text-slate-600 mb-5 flex-1">${r.paso}</p>
+        <button onClick=${()=>cook(r)} className="w-full rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-3 transition active:scale-[.98]">¡Ya lo cociné!</button>
+      </div>`)}</div>`}
+  </div>`;
+
+  const Impacto = () => {
+    const meta = 800, pct = Math.min(100, imp.mxn/meta*100);
+    return html`<div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="lg:col-span-2 rounded-3xl bg-emerald-800 text-white p-7">
+        <div className="text-emerald-200">Dinero ahorrado este mes</div>
+        <div className="text-6xl font-extrabold tracking-tight my-2">${mxn(imp.mxn)} <span className="text-xl font-semibold text-emerald-200">MXN</span></div>
+        <div className="h-2 rounded bg-emerald-950/40 mt-5"><div className="h-2 rounded bg-emerald-300" style=${{width:pct+'%',transition:'width .8s'}}></div></div>
+        <div className="text-sm text-emerald-200 mt-2">Meta del mes: ${mxn(meta)} · ${Math.round(pct)}% completada</div>
+      </div>
+      <div className="grid grid-cols-2 lg:grid-cols-1 gap-4">
+        <div className="rounded-2xl bg-white border border-slate-200 p-5"><div className="text-2xl mb-1">🥕</div><div className="text-3xl font-extrabold">${imp.kg.toFixed(1)} kg</div><div className="text-sm text-slate-500">de comida salvada</div></div>
+        <div className="rounded-2xl bg-white border border-slate-200 p-5"><div className="text-2xl mb-1">💧</div><div className="text-3xl font-extrabold">${imp.agua.toLocaleString('es-MX')} L</div><div className="text-sm text-slate-500">de agua ahorrada · ≈ ${Math.round(imp.agua/72)} regaderas</div></div>
+      </div>
+      <div className="lg:col-span-3 rounded-2xl bg-white border border-slate-200 p-5">
+        <h3 className="font-bold mb-2">Rescatado recientemente</h3>
+        ${imp.hist.length===0?html`<p className="text-sm text-slate-400">Cocina una receta para verla aquí.</p>`
+         :imp.hist.map((h,i)=>html`<div key=${i} className="flex justify-between py-2 border-b border-slate-100 last:border-0 text-sm"><span>${h.t}</span><span className="font-bold text-emerald-700">+${mxn(h.m)}</span></div>`)}
+      </div>
+    </div>`;
+  };
+
+
+  const Nutricion = () => {
+    const names = inv.map(i=>i.n);
+    const licuados = LICUADOS.map(l=>({...l,tengo:l.ing.filter(x=>names.includes(x))}))
+      .sort((a,b)=>b.tengo.length-a.tengo.length);
+    const benef = inv.filter(i=>BENEF[i.n]);
+    return html`<div className="space-y-8">
+      <div>
+        <p className="text-slate-500 mb-4 max-w-2xl">Elige tu objetivo y te sugerimos una rutina del día usando lo que ya tienes en tu refri.</p>
+        <div className="flex flex-wrap gap-2">
+          ${OBJ.map(o=>html`<button key=${o.id} onClick=${()=>setObj(o.id)} aria-pressed=${obj===o.id} className=${'px-4 py-2 rounded-full text-sm font-bold border transition '+(obj===o.id?'bg-emerald-700 text-white border-emerald-700':'bg-white text-slate-700 border-slate-200 hover:bg-emerald-50')}>${o.e} ${o.l}</button>`)}
+        </div>
+      </div>
+
+      <div>
+        <h2 className="font-extrabold text-xl mb-3">Tu rutina nutritiva de hoy</h2>
+        <div className="rounded-2xl bg-white border border-slate-200 divide-y divide-slate-100">
+          ${RUTINA[obj].map(r=>html`<div key=${r.t} className="flex items-start gap-4 p-4">
+            <div className="w-14 shrink-0 text-sm font-bold text-emerald-700 pt-0.5">${r.h}</div>
+            <div className="flex-1">
+              <div className="font-bold text-[15px]">${r.t}</div>
+              <div className="text-sm text-slate-600">${r.d}</div>
+            </div>
+          </div>`)}
+        </div>
+      </div>
+
+      <div>
+        <h2 className="font-extrabold text-xl mb-3">Licuados recomendados</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          ${licuados.map(l=>html`<div key=${l.id} className="rounded-3xl border border-slate-200 bg-white p-5 flex flex-col">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-xl bg-slate-100 flex items-center justify-center text-2xl">${l.e}</div>
+              <h3 className="font-extrabold text-lg leading-tight">${l.t}</h3>
+            </div>
+            <div className="flex flex-wrap gap-1.5 my-3">
+              ${l.ing.map(x=>html`<span key=${x} className=${'text-xs px-2 py-0.5 rounded-full '+(names.includes(x)?'bg-emerald-100 text-emerald-900 font-semibold':'bg-slate-100 text-slate-500')}>${x}</span>`)}
+            </div>
+            <p className="text-sm text-slate-600 mb-2"><b>Beneficio:</b> ${l.ben}</p>
+            <p className="text-sm text-slate-500 flex-1">${l.paso}</p>
+            <div className=${'text-xs mt-3 font-semibold '+(l.tengo.length===l.ing.length?'text-emerald-700':'text-slate-400')}>${l.tengo.length===l.ing.length?'Tienes todos los ingredientes':'Tienes '+l.tengo.length+' de '+l.ing.length+' ingredientes'}</div>
+          </div>`)}
+        </div>
+      </div>
+
+      <div>
+        <h2 className="font-extrabold text-xl mb-3">Beneficios de lo que tienes en tu refri</h2>
+        ${benef.length===0?html`<p className="text-sm text-slate-400">Agrega alimentos a tu refri para ver sus beneficios.</p>`
+        :html`<div className="grid grid-cols-1 md:grid-cols-2 gap-3">${benef.map(i=>html`<div key=${i.id} className="flex items-start gap-3 rounded-2xl bg-white border border-slate-200 p-4">
+          <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-xl shrink-0">${i.e}</div>
+          <div><div className="font-bold text-[15px]">${i.n}</div><div className="text-sm text-slate-600">${BENEF[i.n]}</div></div>
+        </div>`)}</div>`}
+        <p className="text-xs text-slate-400 mt-5">Información general; no sustituye la recomendación de un nutriólogo.</p>
+      </div>
+    </div>`;
+  };
+
+
+  const onFoto = e=>{
+    const f = e.target.files&&e.target.files[0]; if(!f) return;
+    setScanImg(URL.createObjectURL(f)); setScanSt('busy'); setScanItems([]);
+    const mode = scanMode;
+    setTimeout(()=>{
+      setScanItems(SCAN_DEMO[mode].map(([n,q],k)=>({id:k,n,q,on:true})));
+      setScanSt('done');
+    },1800);
+  };
+  const reiniciarScan = ()=>{setScanImg(null);setScanSt('idle');setScanItems([]);};
+  const agregarEscaneo = ()=>{
+    const sel = scanItems.filter(i=>i.on); if(!sel.length) return;
+    setInv(cur=>[...cur,...sel.map((i,k)=>({id:Date.now()+k,n:i.n,e:guessEmoji(i.n),d:guessDays(i.n),q:i.q,kg:.3,p:25,w:60}))]);
+    setToast(`${sel.length} ${sel.length===1?'producto agregado':'productos agregados'} a tu refri`);
+    reiniciarScan();
+  };
+
+  const Escaneo = () => {
+    const modos = [['ticket','🧾','Escanear ticket','Fotografía tu ticket de compra'],['foto','🥕','Foto de productos','Fotografía lo que compraste en el tianguis']];
+    return html`<div className="max-w-2xl">
+      <p className="text-slate-500 mb-5">Agrega tus compras a tu refri sin escribirlas una por una.</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
+        ${modos.map(([k,e,l,d])=>html`<button key=${k} onClick=${()=>{setScanMode(k);reiniciarScan();}} aria-pressed=${scanMode===k} className=${'text-left rounded-2xl border-2 p-4 transition '+(scanMode===k?'border-emerald-600 bg-emerald-50':'border-slate-200 bg-white hover:bg-slate-50')}>
+          <div className="text-3xl mb-1">${e}</div><div className="font-bold">${l}</div><div className="text-sm text-slate-500">${d}</div>
+        </button>`)}
+      </div>
+
+      ${scanSt==='idle'&&html`<div className="rounded-3xl border-2 border-dashed border-slate-300 bg-white p-8 text-center">
+        <div className="text-5xl mb-3">${scanMode==='ticket'?'🧾':'📷'}</div>
+        <div className="font-bold mb-1">${scanMode==='ticket'?'Toma una foto de tu ticket':'Toma una foto de tus productos'}</div>
+        <div className="text-sm text-slate-500 mb-5">${scanMode==='ticket'?'Procura que se vea completo y bien iluminado.':'Acomoda lo que compraste en una mesa, a la vista.'}</div>
+        <div className="flex flex-col sm:flex-row gap-2 justify-center">
+          <label className="cursor-pointer rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-5 py-3 transition">📸 Tomar foto
+            <input type="file" accept="image/*" capture="environment" className="hidden" onChange=${onFoto}/>
+          </label>
+          <label className="cursor-pointer rounded-2xl border border-slate-200 font-bold px-5 py-3 hover:bg-slate-50 transition">🖼️ Elegir de la galería
+            <input type="file" accept="image/*" className="hidden" onChange=${onFoto}/>
+          </label>
+        </div>
+      </div>`}
+
+      ${scanSt!=='idle'&&html`<div className="rounded-3xl border border-slate-200 bg-white p-5">
+        ${scanImg&&html`<img src=${scanImg} alt="Foto escaneada" className="w-full max-h-64 object-cover rounded-2xl mb-4"/>`}
+        ${scanSt==='busy'?html`<div>
+          <div className="font-semibold mb-3">Analizando ${scanMode==='ticket'?'tu ticket':'tus productos'}…</div>
+          <div className="h-1.5 rounded bg-slate-100 overflow-hidden"><div className="h-full bg-emerald-600" style=${{animation:'bar 1.8s ease-out forwards'}}></div></div>
+        </div>`:html`<div>
+          <div className="font-bold mb-1">Encontramos ${scanItems.length} productos</div>
+          <div className="text-sm text-slate-500 mb-3">Desmarca lo que no quieras agregar.</div>
+          <div className="divide-y divide-slate-100 mb-4">
+            ${scanItems.map(i=>html`<button key=${i.id} onClick=${()=>setScanItems(cur=>cur.map(x=>x.id===i.id?{...x,on:!x.on}:x))} className="w-full flex items-center gap-3 py-2.5 text-left">
+              <span className=${'w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs shrink-0 '+(i.on?'bg-emerald-600 border-emerald-600 text-white':'border-slate-300')}>${i.on?'✓':''}</span>
+              <span className="text-xl">${guessEmoji(i.n)}</span>
+              <span className=${'flex-1 font-semibold text-[15px] '+(i.on?'':'text-slate-400 line-through')}>${i.n}</span>
+              <span className="text-xs text-slate-500">${i.q}</span>
+            </button>`)}
+          </div>
+          <div className="flex gap-2">
+            <button onClick=${reiniciarScan} className="flex-1 rounded-2xl border border-slate-200 font-bold py-3 hover:bg-slate-50 transition">Escanear otra vez</button>
+            <button onClick=${agregarEscaneo} disabled=${!scanItems.some(i=>i.on)} className="flex-1 rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-3 transition disabled:opacity-40">Agregar a mi refri</button>
+          </div>
+        </div>`}
+      </div>`}
+      <p className="text-xs text-slate-400 mt-5">Demo: el reconocimiento de productos es simulado.</p>
+    </div>`;
+  };
+
+  const suscribir = p=>{
+    setPlan(p.id);
+    setToast(p.id==='gratis'?'Cambiaste al plan Básico':`¡Listo! Ahora tienes el plan ${p.n} · ${p.p===0?'gratis':mxn(p.p)+' MXN/'+p.per}`);
+  };
+
+  const Cell = ({v}) => v===true?html`<span className="text-emerald-600 text-lg">✓</span>`
+    : v===false?html`<span className="text-slate-300 text-lg">—</span>`
+    : html`<span className="text-sm font-semibold text-slate-700">${v}</span>`;
+
+  const Suscripcion = () => html`<div>
+    <p className="text-slate-500 mb-6 max-w-2xl">Entre más alto el plan, más automatización y control tienes sobre tu refri. Compara lo que cambia entre cada uno.</p>
+
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch mb-8 max-w-3xl">
+      ${PLANES.map((p,pi)=>html`<div key=${p.id} className=${'rounded-3xl p-6 flex flex-col border-2 relative '+(p.destacado?'border-emerald-600 bg-emerald-800 text-white shadow-xl md:-translate-y-2':'border-slate-200 bg-white')}>
+        ${p.destacado&&html`<span className="absolute -top-3 left-6 bg-amber-400 text-slate-900 text-xs font-extrabold px-3 py-1 rounded-full">Más popular</span>`}
+        <div className=${'font-bold text-lg '+(p.destacado?'':'text-slate-800')}>${p.n}</div>
+        <div className="flex items-end gap-1 my-2">
+          <span className="text-4xl font-extrabold">${p.p===0?'Gratis':mxn(p.p)}</span>
+          ${p.p>0&&html`<span className=${'text-sm mb-1 '+(p.destacado?'text-emerald-200':'text-slate-400')}>MXN/${p.per}</span>`}
+        </div>
+        <div className=${'text-sm mb-5 '+(p.destacado?'text-emerald-100':'text-slate-500')}>${p.d}</div>
+        <ul className="space-y-2.5 mb-6 flex-1">
+          ${FEATURES.filter(f=>pi===0?f.v[0]!==false:true).map((f,i)=>{
+            const val=f.v[pi], prev=pi>0?f.v[pi-1]:null, isNew = pi>0 && prev!==val && val!==false;
+            return html`<li key=${i} className="flex items-start gap-2 text-sm">
+              <span className=${val===false?(p.destacado?'text-emerald-500/40':'text-slate-300'):(p.destacado?'text-emerald-300':'text-emerald-600')}>${val===false?'—':'✓'}</span>
+              <span className=${(val===false?(p.destacado?'text-emerald-300/50 line-through':'text-slate-300 line-through'):(p.destacado?'text-emerald-50':'text-slate-700'))+' flex-1'}>
+                ${f.n}${typeof val==='string'?html` <b>· ${val}</b>`:''}
+              </span>
+              ${isNew&&html`<span className=${'text-[10px] font-extrabold px-1.5 py-0.5 rounded-full shrink-0 '+(p.destacado?'bg-amber-300 text-slate-900':'bg-emerald-100 text-emerald-800')}>nuevo</span>`}
+            </li>`;
+          })}
+        </ul>
+        <button onClick=${()=>suscribir(p)} disabled=${plan===p.id} className=${'w-full rounded-2xl font-bold py-3 transition active:scale-[.98] disabled:cursor-default '+
+          (plan===p.id?(p.destacado?'bg-emerald-950/40 text-emerald-200':'bg-slate-100 text-slate-400')
+          :p.destacado?'bg-white text-emerald-800 hover:bg-emerald-50':'bg-emerald-700 text-white hover:bg-emerald-800')}>
+          ${plan===p.id?'Plan actual':p.p===0?'Cambiar a Básico':'Suscribirme'}
+        </button>
+      </div>`)}
+    </div>
+
+    <div className="rounded-2xl border border-slate-200 bg-white overflow-x-auto">
+      <table className="w-full text-sm min-w-[560px]">
+        <thead>
+          <tr className="border-b border-slate-100">
+            <th className="text-left font-bold p-4">Qué incluye</th>
+            ${PLANES.map(p=>html`<th key=${p.id} className=${'text-center p-4 font-bold '+(p.destacado?'text-emerald-700':'text-slate-700')}>${p.n}</th>`)}
+          </tr>
+        </thead>
+        <tbody>
+          ${FEATURES.map((f,i)=>html`<tr key=${i} className="border-b border-slate-50 last:border-0">
+            <td className="p-4 text-slate-600">${f.n}</td>
+            ${f.v.map((v,j)=>html`<td key=${j} className=${'text-center p-4 '+(j===1?'bg-emerald-50/50':'')}><${Cell} v=${v}/></td>`)}
+          </tr>`)}
+        </tbody>
+      </table>
+    </div>
+    <p className="text-xs text-slate-400 mt-5">Demo: la suscripción es simulada, no se realiza ningún cobro.</p>
+  </div>`;
+
+  const tabs=[['nevera','Mi refri','❄️','Estado del refrigerador','Refri'],['lista','Lista de compras','🛒','Lista de compras','Lista'],['escaneo','Escaneo','📷','Escaneo','Scan'],['recetas','Cocina esto primero','🍳','Cocina esto primero','Recetas'],['impacto','Mi impacto','🌱','Tu impacto este mes','Impacto'],['nutricion','Nutrición','🥗','Modo nutrición','Nutri'],['suscripcion','Suscripción','💳','Suscripción','Plan']];
+  const cur = tabs.find(t=>t[0]===tab);
+
+  return html`
+  <div className="min-h-screen lg:flex">
+    <aside className="hidden lg:flex flex-col w-64 shrink-0 bg-slate-900 text-white p-6 sticky top-0 h-screen">
+      <div className="flex items-center gap-2 mb-10">
+        <div className="w-9 h-9 rounded-lg bg-emerald-600 flex items-center justify-center font-extrabold">S</div>
+        <span className="text-xl font-extrabold tracking-tight">Sust<span className="text-emerald-400">AI</span>n</span>
+      </div>
+      <nav className="space-y-1">
+        ${tabs.map(([k,l,e])=>html`<button key=${k} onClick=${()=>setTab(k)} aria-current=${tab===k} className=${'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left font-semibold transition '+(tab===k?'bg-emerald-600 text-white':'text-slate-300 hover:bg-slate-800')}><span>${e}</span>${l}</button>`)}
+      </nav>
+      <div className="mt-auto rounded-2xl bg-slate-800 p-4 text-sm">
+        <div className="flex items-center gap-2 font-semibold"><span className="w-2 h-2 rounded-full bg-emerald-400"></span>SustAIn Pod</div>
+        <div className="text-slate-400 mt-1">Conectado · señal 92%</div>
+      </div>
+    </aside>
+    <main className="flex-1 min-w-0 p-4 sm:p-8 pb-28 lg:pb-8">
+      <div className="max-w-6xl mx-auto">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2 lg:hidden">
+            <div className="w-8 h-8 rounded-lg bg-emerald-700 text-white flex items-center justify-center font-extrabold">S</div>
+            <span className="text-lg font-extrabold">Sust<span className="text-emerald-700">AI</span>n</span>
+          </div>
+          <h1 className="hidden lg:block text-3xl font-extrabold tracking-tight">${cur[3]}</h1>
+          <span className="text-sm text-slate-500">Hola, familia Ramírez</span>
+        </div>
+        <h1 className="lg:hidden text-2xl font-extrabold tracking-tight mb-4">${cur[3]}</h1>
+        ${tab==='nevera'&&html`<${Nevera}/>`}
+        ${tab==='lista'&&html`<${Lista}/>`}
+        ${tab==='escaneo'&&html`<${Escaneo}/>`}
+        ${tab==='recetas'&&html`<${Recetas}/>`}
+        ${tab==='impacto'&&html`<${Impacto}/>`}
+        ${tab==='nutricion'&&html`<${Nutricion}/>`}
+        ${tab==='suscripcion'&&html`<${Suscripcion}/>`}
+      </div>
+    </main>
+    <nav className="lg:hidden fixed bottom-0 inset-x-0 grid grid-cols-7 bg-white border-t border-slate-200" style=${{paddingBottom:'env(safe-area-inset-bottom,0px)'}}>
+      ${tabs.map(([k,l,e,_,short])=>html`<button key=${k} onClick=${()=>setTab(k)} aria-current=${tab===k} className=${'py-3 flex flex-col items-center gap-0.5 text-[11px] font-semibold '+(tab===k?'text-emerald-700':'text-slate-400')}><span className=${'text-lg '+(tab===k?'':'grayscale opacity-60')}>${e}</span>${short}</button>`)}
+    </nav>
+    ${compartiendo&&html`<div className="fixed inset-0 z-50 bg-slate-900/70 flex items-center justify-center p-4" onClick=${()=>setCompartiendo(false)}>
+      <div onClick=${e=>e.stopPropagation()} className="bg-white rounded-3xl p-6 w-full max-w-sm">
+        <h3 className="font-extrabold text-lg mb-1">Compartir lista</h3>
+        <p className="text-sm text-slate-500 mb-4">Cópiala y mándala por WhatsApp, mensaje o correo.</p>
+        <pre className="whitespace-pre-wrap text-sm bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-4 max-h-60 overflow-y-auto font-sans">${compartirTexto()}</pre>
+        <div className="flex gap-2">
+          <button onClick=${()=>setCompartiendo(false)} className="flex-1 rounded-2xl border border-slate-200 font-bold py-3 hover:bg-slate-50 transition">Cerrar</button>
+          <button onClick=${copiarLista} className="flex-1 rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-3 transition">Copiar</button>
+        </div>
+      </div>
+    </div>`}
+    ${toast&&html`<div role="status" className="fixed z-50 left-4 right-4 sm:left-auto sm:right-8 sm:max-w-sm bottom-24 lg:bottom-8 bg-slate-900 text-white text-sm rounded-2xl px-4 py-3 shadow-xl">${toast}</div>`}
+  </div>`;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(html`<${App}/>`);
+</script>
+</body>
+</html>
+
+</body></html>
